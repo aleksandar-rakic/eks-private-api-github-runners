@@ -19,6 +19,14 @@ updates:
       interval: weekly
     # Major versions of the AWS provider and the vpc / eks modules rename inputs
     # and need a planned migration, so only minor and patch updates come in here.
+    # Dependabot widens "~>" ranges for Terraform, so update-types alone does
+    # not hold majors back; each major is excluded by version range as well.
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "hashicorp/aws"
+        versions: [">= 6.0.0"]
+      - dependency-name: "terraform-aws-modules/vpc/aws"
+        versions: [">= 6.0.0"]
+      - dependency-name: "terraform-aws-modules/eks/aws"
+        versions: [">= 21.0.0"]
