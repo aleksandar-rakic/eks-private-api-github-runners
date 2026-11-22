@@ -1,0 +1,21 @@
+# The platform runners apply cluster-wide resources (CRDs, namespaces, Helm releases),
+# so their ServiceAccount is bound to cluster-admin. Only workflows that select
+# runs-on: arc-platform run with this identity; keep that list short.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: arc-platform-runner
+  namespace: arc-runners
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: arc-platform-runner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: arc-platform-runner
+    namespace: arc-runners

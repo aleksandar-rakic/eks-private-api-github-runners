@@ -1,0 +1,28 @@
+# Everything that talks to the Kubernetes API runs on runners inside the cluster.
+# Skipped until ARC_RUNNERS_READY is set to true, so jobs never wait for a runner
+# that does not exist yet.
+name: platform
+
+on:
+  push:
+    branches: [main]
+    paths: ["kubernetes/platform/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: vars.ARC_RUNNERS_READY == 'true'
+    runs-on: arc-platform
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Diff
+        run: kubectl diff -k kubernetes/platform || true
+      - name: Apply
+        run: kubectl apply -k kubernetes/platform

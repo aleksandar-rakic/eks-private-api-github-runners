@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # Action SHAs pinned in .github/workflows; Dependabot updates the SHA and the version comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Terraform providers and the vpc / eks registry modules in terraform/foundations.
+  - package-ecosystem: terraform
+    directory: /terraform/foundations
+    schedule:
+      interval: weekly
+    # Major versions of the AWS provider and the vpc / eks modules rename inputs
+    # and need a planned migration, so only minor and patch updates come in here.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

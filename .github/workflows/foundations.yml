@@ -1,0 +1,64 @@
+# AWS foundations: VPC, EKS control plane and node group, IAM.
+# Runs on GitHub-hosted runners and never needs the Kubernetes API.
+# Skipped until the repository variables in the README are set, so a fork
+# without AWS access does not fail.
+name: foundations
+
+on:
+  pull_request:
+    paths: ["terraform/foundations/**"]
+  push:
+    branches: [main]
+    paths: ["terraform/foundations/**"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_DIR: terraform/foundations
+  AWS_REGION: eu-central-1
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request' && vars.FOUNDATIONS_PLAN_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.10.5
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.FOUNDATIONS_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Plan
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=foundations.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+          terraform plan -input=false -lock=false -no-color
+
+  apply:
+    if: github.event_name == 'push' && vars.FOUNDATIONS_APPLY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    environment: foundations # protected, bound to main; the apply role trusts only this environment
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.10.5
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.FOUNDATIONS_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=foundations.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+          terraform apply -input=false -auto-approve

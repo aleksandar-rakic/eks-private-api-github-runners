@@ -1,0 +1,11 @@
+name              = "platform"
+region            = "eu-central-1"
+github_repository = "your-org/eks-private-api-github-runners"
+
+cluster_admin_role_arns = {
+  platform = "arn:aws:iam::111122223333:role/aws-reserved/sso.amazonaws.com/eu-central-1/AWSReservedSSO_PlatformAdmin_0123456789abcdef"
+}
+
+# First apply of a new cluster only:
+# bootstrap_public_endpoint = true
+# bootstrap_cidrs           = ["203.0.113.10/32"]

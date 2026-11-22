@@ -1,0 +1,39 @@
+# gha-runner-scale-set for the jobs that need the Kubernetes API.
+# helm install arc-platform oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
+#   --namespace arc-runners --create-namespace -f kubernetes/arc/runner-scale-set-values.yaml
+#
+# Workflows select these runners with:  runs-on: arc-platform
+
+githubConfigUrl: https://github.com/your-org/eks-private-api-github-runners
+
+# GitHub App credentials live in a Kubernetes Secret created out of band
+# (kubectl create secret generic arc-github-app ...). Putting them in Helm values
+# would print them in plan output and store them in the Helm release history.
+githubConfigSecret: arc-github-app
+
+runnerScaleSetName: arc-platform
+minRunners: 0
+maxRunners: 4
+
+template:
+  spec:
+    serviceAccountName: arc-platform-runner
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001 # the "runner" user in the image
+      seccompProfile:
+        type: RuntimeDefault
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:2.338.2 # multi-arch; the system node group is arm64
+        command: ["/home/runner/run.sh"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            memory: 2Gi
